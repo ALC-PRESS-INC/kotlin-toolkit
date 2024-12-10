@@ -191,8 +191,10 @@ public class EpubPositionsService(
     }
 
     /**
-     * Find missing number in a list of increasing numbers
-     * According to Content Team, it is possible to have skipped page numbers in Epub page-list
+     * Find missing numbers in a list of increasing numbers
+     * According to Content Team, it is possible to have skipped page numbers in Epub page-list.
+     * (These are white/empty pages in PDF and has been removed for Epub)
+     * eg. [1, 2, 3, 5, 8, 9] -> Pages 4 and 7 are missing
      * To handle this, this function looks for the missing number and skips it when creating Publication.positions()
      */
     private fun findMissingNumbersUsingXor(numbers: List<Int>): List<Int> {
@@ -200,7 +202,6 @@ public class EpubPositionsService(
         val min = numbers.min()
         val max = numbers.max()
 
-        // XOR of all numbers in the range [min, max]
         var xorRange = 0
         for (num in min..max) {
             xorRange = xorRange xor num
@@ -209,9 +210,7 @@ public class EpubPositionsService(
         for (num in numbers) {
             xorList = xorList xor num
         }
-        val xorMissing = xorRange xor xorList
 
-        // Identify missing numbers using the XOR result
         val fullRange = (min..max).toSet()
         val actualNumbers = numbers.toSet()
         return fullRange.subtract(actualNumbers).toList().sorted()
