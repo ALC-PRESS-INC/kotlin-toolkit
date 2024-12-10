@@ -415,12 +415,13 @@ public class EpubNavigatorFragment internal constructor(
 //                }
                 currentReflowablePageFragment?.webView?.let { webView ->
                     if (viewModel.isScrollEnabled.value) {
-                        if (currentPagerPosition < position) {
-                            // handle swipe LEFT
+                        val key = locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
+                        val locator = scrollPositionsHashMap[key]
+                        locator?.let {
+                            val progression = it.locations.progression ?: 0.0
+                            webView.scrollToPosition(progression)
+                        } ?: run {
                             webView.scrollToStart()
-                        } else if (currentPagerPosition > position) {
-                            // handle swipe RIGHT
-                            webView.scrollToEnd()
                         }
                     } else {
                         if (currentPagerPosition < position) {
@@ -912,14 +913,6 @@ public class EpubNavigatorFragment internal constructor(
             if (settings.value.readingProgression == ReadingProgression.RTL) {
                 webView.setCurrentItem(webView.numPages - 1, false)
             } else {
-                lifecycleScope.launch {
-                    val locator =
-                        scrollPositionsHashMap[locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()]
-                    locator?.let {
-                        val progression = it.locations.progression ?: 0.0
-                        webView.scrollToPosition(progression)
-                    }
-                }
                 webView.setCurrentItem(0, false)
             }
         }
@@ -944,14 +937,6 @@ public class EpubNavigatorFragment internal constructor(
             if (settings.value.readingProgression == ReadingProgression.RTL) {
                 webView.setCurrentItem(0, false)
             } else {
-                lifecycleScope.launch {
-                    val locator =
-                        scrollPositionsHashMap[locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()]
-                    locator?.let {
-                        val progression = it.locations.progression ?: 0.0
-                        webView.scrollToPosition(progression)
-                    }
-                }
                 webView.setCurrentItem(webView.numPages - 1, false)
             }
         }
