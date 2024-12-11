@@ -36,6 +36,7 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.epub.pageList
 import org.readium.r2.testapp.LITERATA
 import org.readium.r2.testapp.R
+import org.readium.r2.testapp.reader.preferences.MissingBottomSheetDialogFragment
 import org.readium.r2.testapp.reader.preferences.UserPreferencesViewModel
 import org.readium.r2.testapp.search.SearchFragment
 
@@ -175,6 +176,12 @@ class EpubReaderFragment : VisualReaderFragment() {
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                     when (menuItem.itemId) {
                         R.id.search -> {
+                            return true
+                        }
+                        R.id.missing -> {
+                            val missingMapping = getMissingMapping(publication)
+                            MissingBottomSheetDialogFragment(missingMapping)
+                                .show(childFragmentManager, "Settings")
                             return true
                         }
                         android.R.id.home -> {

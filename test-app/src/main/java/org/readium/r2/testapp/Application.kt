@@ -124,25 +124,5 @@ class Application : android.app.Application() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             return
         }
-
-        val executor = Executors.newSingleThreadExecutor()
-        StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder()
-                .detectAll()
-                .penaltyListener(executor) { violation ->
-                    Timber.e(violation, "Thread policy violation")
-                }
-//                .penaltyDeath()
-                .build()
-        )
-        StrictMode.setVmPolicy(
-            StrictMode.VmPolicy.Builder()
-                .detectAll()
-                .penaltyListener(executor) { violation ->
-                    Timber.e(violation, "VM policy violation")
-                }
-//                .penaltyDeath()
-                .build()
-        )
     }
 }

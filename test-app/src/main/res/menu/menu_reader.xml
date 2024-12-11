@@ -6,6 +6,14 @@
     tools:context='org.readium.r2.testapp.reader.BaseReaderFragment'>
 
     <item
+        android:id="@+id/missing"
+        android:icon="@drawable/ic_baseline_delete_24"
+        android:title="@string/epubactivity_search"
+        android:visible="true"
+        app:iconifiedByDefault="false"
+        app:showAsAction="collapseActionView|always" />
+
+    <item
         android:id="@+id/search"
         android:icon="@drawable/ic_baseline_search_24"
         android:title="@string/epubactivity_search"

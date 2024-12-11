@@ -22,8 +22,11 @@ import org.readium.r2.navigator.preferences.Configurable
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
+import org.readium.r2.shared.publication.epub.pageList
 import org.readium.r2.testapp.R
 import org.readium.r2.testapp.reader.preferences.MainPreferencesBottomSheetDialogFragment
+import org.readium.r2.testapp.reader.preferences.MissingBottomSheetDialogFragment
+import org.readium.r2.testapp.reader.preferences.UserPreferencesBottomSheetDialogFragment
 import org.readium.r2.testapp.utils.UserError
 
 /*
@@ -83,6 +86,12 @@ abstract class BaseReaderFragment : Fragment() {
                             )
                             return true
                         }
+                        R.id.missing -> {
+                            val missingMapping = getMissingMapping(model.publication)
+                            MissingBottomSheetDialogFragment(missingMapping)
+                                .show(childFragmentManager, "Settings")
+                            return true
+                        }
                         R.id.bookmark -> {
                             model.insertBookmark(navigator.currentLocator.value)
                             return true
@@ -104,6 +113,20 @@ abstract class BaseReaderFragment : Fragment() {
             },
             viewLifecycleOwner
         )
+    }
+
+    fun getMissingMapping(
+        publication: Publication,
+    ): List<String> {
+        val manifestPositions = publication.manifest.readingOrder
+        val linkPositions = publication.pageList
+        val allXhtml = manifestPositions.map { it.href.toString() }.distinct()
+        val allPageMapping = linkPositions.map { it.href.toString().substringBefore("#") }.distinct()
+        return (allXhtml + allPageMapping)
+            .groupBy { it }
+            .filter { it.value.size == 1 }
+            .keys
+            .toList()
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
