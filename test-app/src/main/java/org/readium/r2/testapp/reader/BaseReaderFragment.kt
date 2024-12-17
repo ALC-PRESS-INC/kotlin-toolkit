@@ -26,7 +26,6 @@ import org.readium.r2.shared.publication.epub.pageList
 import org.readium.r2.testapp.R
 import org.readium.r2.testapp.reader.preferences.MainPreferencesBottomSheetDialogFragment
 import org.readium.r2.testapp.reader.preferences.MissingBottomSheetDialogFragment
-import org.readium.r2.testapp.reader.preferences.UserPreferencesBottomSheetDialogFragment
 import org.readium.r2.testapp.utils.UserError
 
 /*
@@ -86,10 +85,16 @@ abstract class BaseReaderFragment : Fragment() {
                             )
                             return true
                         }
-                        R.id.missing -> {
+                        R.id.missing_page -> {
+                            val missingMapping = findMissingNumbersUsingXor(publication)
+                            MissingBottomSheetDialogFragment(missingMapping)
+                                .show(childFragmentManager, "page")
+                            return true
+                        }
+                        R.id.missing_xhtml -> {
                             val missingMapping = getMissingMapping(model.publication)
                             MissingBottomSheetDialogFragment(missingMapping)
-                                .show(childFragmentManager, "Settings")
+                                .show(childFragmentManager, "xhtml")
                             return true
                         }
                         R.id.bookmark -> {
@@ -128,6 +133,38 @@ abstract class BaseReaderFragment : Fragment() {
             .keys
             .toList()
     }
+
+    /**
+     * Find missing numbers in a list of increasing numbers
+     * According to Content Team, it is possible to have skipped page numbers in Epub page-list.
+     * (These are white/empty pages in PDF and has been removed for Epub)
+     * eg. [1, 2, 3, 5, 8, 9] -> Pages 4 and 7 are missing
+     */
+    fun findMissingNumbersUsingXor(publication: Publication): List<String> {
+        val pageList = publication.pageList
+        var positionRange = pageList.mapNotNull { it.title }.map { it.toInt() }
+
+        if (positionRange.isEmpty()) return emptyList()
+        val min = positionRange.min()
+        val max = positionRange.max()
+
+        // XOR of all numbers in the range [min, max]
+        var xorRange = 0
+        for (num in min..max) {
+            xorRange = xorRange xor num
+        }
+        var xorList = 0
+        for (num in positionRange) {
+            xorList = xorList xor num
+        }
+        val xorMissing = xorRange xor xorList
+
+        // Identify missing numbers using the XOR result
+        val fullRange = (min..max).toSet()
+        val actualNumbers = positionRange.toSet()
+        return fullRange.subtract(actualNumbers).toList().sorted().map { it.toString() }
+    }
+
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)

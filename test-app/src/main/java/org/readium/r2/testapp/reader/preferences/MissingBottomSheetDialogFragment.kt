@@ -8,22 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.activityViewModels
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import org.readium.r2.shared.publication.Link
-import org.readium.r2.shared.publication.Publication
-import org.readium.r2.shared.publication.epub.pageList
-import org.readium.r2.testapp.reader.ReaderViewModel
 import org.readium.r2.testapp.utils.compose.ComposeBottomSheetDialogFragment
 
 class MissingBottomSheetDialogFragment(
-    private val missingXhtml: List<String>,
+    private val missing: List<String>,
 ) : ComposeBottomSheetDialogFragment(
     isScrollable = true
 ) {
@@ -50,9 +44,9 @@ class MissingBottomSheetDialogFragment(
                 Text("Go Back")
             }
             Spacer(Modifier.height(16.dp))
-            Text("Missing XHTML files")
+            Text("Missing $tag")
             Spacer(Modifier.height(16.dp))
-            missingXhtml.forEach {
+            missing.forEach {
                 Text(it)
             }
         }

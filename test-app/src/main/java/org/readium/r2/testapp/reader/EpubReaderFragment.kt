@@ -178,10 +178,16 @@ class EpubReaderFragment : VisualReaderFragment() {
                         R.id.search -> {
                             return true
                         }
-                        R.id.missing -> {
+                        R.id.missing_page -> {
+                            val missingMapping = findMissingNumbersUsingXor(publication)
+                            MissingBottomSheetDialogFragment(missingMapping)
+                                .show(childFragmentManager, "Page")
+                            return true
+                        }
+                        R.id.missing_xhtml -> {
                             val missingMapping = getMissingMapping(publication)
                             MissingBottomSheetDialogFragment(missingMapping)
-                                .show(childFragmentManager, "Settings")
+                                .show(childFragmentManager, "Xhtml")
                             return true
                         }
                         android.R.id.home -> {
