@@ -419,6 +419,7 @@ public class EpubNavigatorFragment internal constructor(
                         val key = locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
                         val locator = scrollPositionsHashMap[key]
                         lifecycleScope.launch(Dispatchers.Main) {
+                            // Workaround to ensure page is loaded before scrolling to stored position
                             delay(25)
                             locator?.let {
                                 val progression = it.locations.progression ?: 0.0
