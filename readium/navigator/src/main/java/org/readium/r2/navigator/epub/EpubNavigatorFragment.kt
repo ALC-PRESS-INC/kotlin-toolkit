@@ -34,6 +34,7 @@ import androidx.lifecycle.withStarted
 import androidx.viewpager.widget.ViewPager
 import kotlin.math.ceil
 import kotlin.reflect.KClass
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -417,11 +418,14 @@ public class EpubNavigatorFragment internal constructor(
                     if (viewModel.isScrollEnabled.value) {
                         val key = locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
                         val locator = scrollPositionsHashMap[key]
-                        locator?.let {
-                            val progression = it.locations.progression ?: 0.0
-                            webView.scrollToPosition(progression)
-                        } ?: run {
-                            webView.scrollToStart()
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            delay(25)
+                            locator?.let {
+                                val progression = it.locations.progression ?: 0.0
+                                webView.scrollToPosition(progression)
+                            } ?: run {
+                                webView.scrollToStart()
+                            }
                         }
                     } else {
                         if (currentPagerPosition < position) {
@@ -430,7 +434,7 @@ public class EpubNavigatorFragment internal constructor(
                         } else if (currentPagerPosition > position) {
                             // handle swipe RIGHT
                             webView.setCurrentItem(webView.numPages - 1, false)
-                        }
+                        } else { }
                     }
                 }
                 currentPagerPosition = position // Update current position
