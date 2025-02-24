@@ -127,7 +127,7 @@ public class EpubNavigatorFragment internal constructor(
     HyperlinkNavigator,
     Configurable<EpubSettings, EpubPreferences> {
 
-    private val scrollPositionsHashMap: HashMap<String, Locator> = hashMapOf()
+    private val scrollPositionsHashMap: HashMap<String, Locator?> = hashMapOf()
 
     // Make a copy to prevent the user from modifying the configuration after initialization.
     internal val config: Configuration = configuration.copy().apply {
@@ -424,8 +424,6 @@ public class EpubNavigatorFragment internal constructor(
                             locator?.let {
                                 val progression = it.locations.progression ?: 0.0
                                 webView.scrollToPosition(progression)
-                            } ?: run {
-                                webView.scrollToStart()
                             }
                         }
                     } else {
@@ -609,7 +607,7 @@ public class EpubNavigatorFragment internal constructor(
     override fun go(locator: Locator, animated: Boolean): Boolean {
         @Suppress("NAME_SHADOWING")
         val locator = publication.normalizeLocator(locator)
-
+        scrollPositionsHashMap[locator.href.toString()] = null
         if (state == State.Initializing) {
             state = State.Loading(locator.href)
         }
