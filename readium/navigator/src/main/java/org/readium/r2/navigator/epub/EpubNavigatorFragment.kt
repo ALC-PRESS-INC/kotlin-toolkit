@@ -458,7 +458,6 @@ public class EpubNavigatorFragment internal constructor(
 
         resourcePager = R2ViewPager(requireContext())
         resourcePager.id = R.id.resourcePager
-        resourcePager.offscreenPageLimit = 2
         resourcePager.publicationType = when (publication.metadata.presentation.layout) {
             EpubLayout.REFLOWABLE, null -> R2ViewPager.PublicationType.EPUB
             EpubLayout.FIXED -> R2ViewPager.PublicationType.FXL
