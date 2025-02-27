@@ -34,7 +34,6 @@ import androidx.lifecycle.withStarted
 import androidx.viewpager.widget.ViewPager
 import kotlin.math.ceil
 import kotlin.reflect.KClass
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -419,9 +418,11 @@ public class EpubNavigatorFragment internal constructor(
                         val key =
                             locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
                         val locator = scrollPositionsHashMap[key]
-                        locator?.let {
-                            val progression = it.locations.progression ?: 0.0
-                            webView.scrollToPosition(progression)
+                        lifecycleScope.launch {
+                            locator?.let {
+                                val progression = it.locations.progression ?: 0.0
+                                webView.scrollToPosition(progression)
+                            }
                         }
                     } else {
                         if (currentPagerPosition < position) {
