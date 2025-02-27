@@ -487,8 +487,10 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
     suspend fun scrollToId(htmlId: String): Boolean =
         runJavaScriptSuspend("readium.scrollToId(\"$htmlId\");").toBoolean()
 
-    fun scrollToPosition(progression: Double) {
-        runJavaScript("readium.scrollToPosition(\"$progression\");")
+    fun scrollToPosition(progression: Double, callback: () -> Unit = {}) {
+        runJavaScript("readium.scrollToPosition(\"$progression\");") {
+            callback.invoke()
+        }
     }
 
     suspend fun scrollToLocator(locator: Locator): Boolean {

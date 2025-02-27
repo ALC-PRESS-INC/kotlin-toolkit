@@ -263,6 +263,7 @@ public class EpubNavigatorFragment internal constructor(
     public interface PaginationListener {
         public fun onPageChanged(pageIndex: Int, totalPages: Int, locator: Locator) {}
         public fun onPageLoaded() {}
+        public fun onScrollToPosition(locator: Locator) {}
     }
 
     public interface Listener : OverflowableNavigator.Listener, HyperlinkNavigator.Listener
@@ -419,9 +420,10 @@ public class EpubNavigatorFragment internal constructor(
                             locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
                         val locator = scrollPositionsHashMap[key]
                         lifecycleScope.launch {
-                            locator?.let {
-                                val progression = it.locations.progression ?: 0.0
-                                webView.scrollToPosition(progression)
+                            locator?.locations?.progression?.takeIf { it > 0.0 }?.let { progression ->
+                                webView.scrollToPosition(progression) {
+                                    paginationListener?.onScrollToPosition(_currentLocator.value)
+                                }
                             }
                         }
                     } else {
