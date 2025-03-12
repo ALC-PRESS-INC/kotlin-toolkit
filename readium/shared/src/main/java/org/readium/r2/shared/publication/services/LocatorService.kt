@@ -55,7 +55,6 @@ public open class DefaultLocatorService(
 
     override suspend fun locateProgression(totalProgression: Double): Locator? {
         if (totalProgression !in 0.0..1.0) {
-            Timber.e("Progression must be between 0.0 and 1.0, received $totalProgression)")
             return null
         }
 
