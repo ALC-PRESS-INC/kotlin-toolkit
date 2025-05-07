@@ -2,11 +2,12 @@ name: Publish
 
 on:
   workflow_dispatch:
-  release:
-    types: [ released ]
+  pull_request:
+    types: [ labeled ]
 
 jobs:
   publish:
+    if: github.event.label.name == 'publish'
     name: Publish to Maven Central
     runs-on: ubuntu-latest
     steps:
@@ -18,8 +19,26 @@ jobs:
           distribution: adopt
           java-version: 17
 
-      - name: Publish to Maven Central
-        run: ./gradlew publishToMavenCentral --no-configuration-cache
+      - name: Publish navigator
+        run: VERSION=0.0.1-20250508-01 ./gradlew readium:readium-navigator:publishMavenPublicationToMavenRepository
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+
+      - name: Publish shared
+        run: VERSION=0.0.1-20250508-01 ./gradlew readium:readium-shared:publishMavenPublicationToMavenRepository
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+
+      - name: Publish streamer
+        run: VERSION=0.0.1-20250508-01 ./gradlew readium:readium-streamer:publishMavenPublicationToMavenRepository
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
