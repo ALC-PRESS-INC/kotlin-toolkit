@@ -168,7 +168,7 @@ public class EpubPositionsService(
     private suspend fun createReflowable(
         link: Link,
         startPosition: Int,
-        resource: Resource
+        resource: Resource,
     ): List<Locator> {
         val href = link.url()
         var startIndexPosition = startPosition
@@ -177,7 +177,7 @@ public class EpubPositionsService(
         val positionCount = pageList.count { it.href.toString().startsWith(href.toString()) }
         if (positionRange.isNotEmpty()) startIndexPosition = positionRange.first()
         val skippedPages = findMissingNumbersUsingXor(positionRange)
-        return (0..< positionCount).mapNotNull { position ->
+        return (0..<positionCount).mapNotNull { position ->
             val locatorPosition = startIndexPosition + position
             if (skippedPages.contains(locatorPosition)) return@mapNotNull null
             createLocator(
