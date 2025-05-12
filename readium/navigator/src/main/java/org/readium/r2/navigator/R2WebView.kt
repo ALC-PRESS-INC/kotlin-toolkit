@@ -109,6 +109,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
     private var mIsBeingDragged: Boolean = false
     private var mGutterSize: Int = 30
     private var mTouchSlop: Int = 0
+    private var mSensitivity: Float = 0.25f
 
     /**
      * Position of the last motion event.
@@ -198,7 +199,6 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
         mScroller = Scroller(context, sInterpolator)
         val configuration = ViewConfiguration.get(context)
         val density = context.resources.displayMetrics.density
-
         mTouchSlop = configuration.scaledPagingTouchSlop
         mMinimumVelocity = (MIN_FLING_VELOCITY * density).toInt()
         mMaximumVelocity = configuration.scaledMaximumFlingVelocity
@@ -738,13 +738,17 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                     mIsBeingDragged = false
                     mHasAbortedScroller = false
 
+                    val width = context.resources.displayMetrics.widthPixels
+                    val flingThreshold = width * mSensitivity
+
                     val activePointerIndex = ev.findPointerIndex(mActivePointerId)
                     val x = ev.safeGetX(activePointerIndex)
                     val y = ev.safeGetY(activePointerIndex)
 
                     if (scrollMode) {
-                        val totalDelta = (y - mInitialMotionY).toInt()
-                        if (abs(totalDelta) < 200) {
+                        val totalDeltaY = abs(y - mInitialMotionY)
+                        val totalDeltaX = abs(x - mInitialMotionX)
+                        if (totalDeltaX > totalDeltaY * 1.5 && totalDeltaX > flingThreshold) {
                             if (mInitialMotionX < x) {
                                 scrollLeft(animated = true)
                             } else if (mInitialMotionX > x) {

@@ -858,7 +858,7 @@ public class EpubNavigatorFragment internal constructor(
          */
         override fun shouldOverrideUrlLoading(
             webView: WebView,
-            request: WebResourceRequest
+            request: WebResourceRequest,
         ): Boolean {
             val url = request.url.toAbsoluteUrl() ?: return false
             viewModel.navigateToUrl(url)
@@ -874,7 +874,7 @@ public class EpubNavigatorFragment internal constructor(
 
         override fun shouldInterceptRequest(
             webView: WebView,
-            request: WebResourceRequest
+            request: WebResourceRequest,
         ): WebResourceResponse? =
             viewModel.shouldInterceptRequest(request)
 
@@ -1111,7 +1111,7 @@ public class EpubNavigatorFragment internal constructor(
                 href = link.url(),
                 mediaType = link.mediaType ?: MediaType.XHTML,
                 title = tableOfContentsTitleByHref[link.href] ?: positionLocator?.title
-                ?: link.title,
+                    ?: link.title,
                 locations = (positionLocator?.locations ?: Locator.Locations()).copy(
                     progression = progression
                 ),

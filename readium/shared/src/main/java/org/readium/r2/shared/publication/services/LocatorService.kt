@@ -7,7 +7,6 @@
 package org.readium.r2.shared.publication.services
 
 import org.readium.r2.shared.publication.*
-import timber.log.Timber
 
 /**
  * Locates the destination of various sources (e.g. locators, progression, etc.) in the
