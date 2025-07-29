@@ -8,15 +8,21 @@ package org.readium.r2.navigator
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
+import org.readium.r2.shared.publication.Manifest
+import org.readium.r2.shared.publication.Metadata
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.services.isRestricted
 
-public abstract class NavigatorFragment internal constructor(
-    protected val publication: Publication,
-) : Fragment(), Navigator {
+public abstract class NavigatorFragment : Fragment(), Navigator {
+
+    public var publication: Publication = Publication(
+        manifest = Manifest(
+            metadata = Metadata(),
+        ),
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        require(!publication.isRestricted) { "The provided publication is restricted. Check that any DRM was properly unlocked using a Content Protection." }
+//        require(!publication.isRestricted) { "The provided publication is restricted. Check that any DRM was properly unlocked using a Content Protection." }
 
         super.onCreate(savedInstanceState)
     }

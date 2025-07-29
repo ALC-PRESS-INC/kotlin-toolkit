@@ -43,7 +43,7 @@ public class PdfNavigatorFactory<S : Configurable.Settings, P : Configurable.Pre
         initialPreferences: P? = null,
         listener: PdfNavigatorFragment.Listener? = null,
     ): FragmentFactory = createFragmentFactory {
-        PdfNavigatorFragment(
+        PdfNavigatorFragment.newInstance(
             publication = publication,
             initialLocator = initialLocator,
             initialPreferences = initialPreferences ?: pdfEngineProvider.createEmptyPreferences(),

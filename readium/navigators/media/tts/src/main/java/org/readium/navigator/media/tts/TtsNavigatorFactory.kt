@@ -213,7 +213,7 @@ public class TtsNavigatorFactory<
             MainScope()
 
         val playbackParameters =
-            ttsPlayer.settings.mapStateIn(coroutineScope) {
+            ttsPlayer.getSettings().mapStateIn(coroutineScope) {
                 ttsEngineProvider.getPlaybackParameters(it)
             }
 

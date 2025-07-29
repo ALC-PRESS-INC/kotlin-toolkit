@@ -81,7 +81,7 @@ public interface OverflowableNavigator : VisualNavigator {
      * Current presentation rendered by the navigator.
      */
     @ExperimentalReadiumApi
-    public val overflow: StateFlow<Overflow>
+    public fun getOverflow(): StateFlow<Overflow>
 
     @ExperimentalReadiumApi
     public interface Overflow {

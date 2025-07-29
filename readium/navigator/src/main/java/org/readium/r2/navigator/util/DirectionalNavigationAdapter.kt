@@ -57,7 +57,7 @@ public class DirectionalNavigationAdapter(
     }
 
     override fun onTap(event: TapEvent): Boolean {
-        if (navigator.overflow.value.scroll && !handleTapsWhileScrolling) {
+        if (navigator.getOverflow().value.scroll && !handleTapsWhileScrolling) {
             return false
         }
 
@@ -114,7 +114,7 @@ public class DirectionalNavigationAdapter(
      * Moves to the left content portion (eg. page) relative to the reading progression direction.
      */
     private fun OverflowableNavigator.goLeft(animated: Boolean = false): Boolean {
-        return when (overflow.value.readingProgression) {
+        return when (getOverflow().value.readingProgression) {
             ReadingProgression.LTR ->
                 goBackward(animated = animated)
 
@@ -127,7 +127,7 @@ public class DirectionalNavigationAdapter(
      * Moves to the right content portion (eg. page) relative to the reading progression direction.
      */
     private fun OverflowableNavigator.goRight(animated: Boolean = false): Boolean {
-        return when (overflow.value.readingProgression) {
+        return when (getOverflow().value.readingProgression) {
             ReadingProgression.LTR ->
                 goForward(animated = animated)
 

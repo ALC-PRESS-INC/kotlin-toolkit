@@ -19,6 +19,7 @@ import androidx.viewpager.widget.ViewPager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import org.readium.r2.navigator.NavigatorFragment
 import org.readium.r2.navigator.OverflowableNavigator
@@ -55,11 +56,10 @@ import org.readium.r2.shared.util.mediatype.MediaType
  * Navigator for bitmap-based publications, such as CBZ.
  */
 @OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
-public class ImageNavigatorFragment private constructor(
-    publication: Publication,
-    private val initialLocator: Locator? = null,
-    internal val listener: Listener? = null,
-) : NavigatorFragment(publication), OverflowableNavigator {
+public class ImageNavigatorFragment : NavigatorFragment(), OverflowableNavigator {
+
+    private var initialLocator: Locator? = null
+    internal var listener: Listener? = null
 
     public interface Listener : VisualNavigator.Listener
 
@@ -130,9 +130,7 @@ public class ImageNavigatorFragment private constructor(
             resourcePager.currentItem = currentPagerPosition
         }
 
-        if (initialLocator != null) {
-            go(initialLocator)
-        }
+        initialLocator?.let { go(it) }
 
         return KeyInterceptorView(view, inputListener)
     }
@@ -219,7 +217,7 @@ public class ImageNavigatorFragment private constructor(
         get() = requireView()
 
     @ExperimentalReadiumApi
-    override val overflow: StateFlow<OverflowableNavigator.Overflow> =
+    override fun getOverflow(): StateFlow<OverflowableNavigator.Overflow> =
         MutableStateFlow(
             SimpleOverflow(
                 readingProgression = when (publication.metadata.readingProgression) {
@@ -243,6 +241,19 @@ public class ImageNavigatorFragment private constructor(
 
     public companion object {
 
+        public fun newInstance(
+            publication: Publication,
+            initialLocator: Locator? = null,
+            listener: Listener? = null,
+        ): ImageNavigatorFragment = ImageNavigatorFragment().apply {
+            this.publication = publication
+            this.initialLocator = initialLocator
+            this.listener = listener
+
+            _currentLocator.value = initialLocator?.let { publication.normalizeLocator(it) }
+                ?: requireNotNull(publication.locatorFromLink(publication.readingOrder.first()))
+        }
+
         /**
          * Factory for [ImageNavigatorFragment].
          *
@@ -256,7 +267,7 @@ public class ImageNavigatorFragment private constructor(
             initialLocator: Locator? = null,
             listener: Listener? = null,
         ): FragmentFactory =
-            createFragmentFactory { ImageNavigatorFragment(publication, initialLocator, listener) }
+            createFragmentFactory { newInstance(publication, initialLocator, listener) }
 
         /**
          * Creates a factory for a dummy [ImageNavigatorFragment].
@@ -265,7 +276,7 @@ public class ImageNavigatorFragment private constructor(
          * need to make sure the fragment is removed from the screen before `onResume` is called.
          */
         public fun createDummyFactory(): FragmentFactory = createFragmentFactory {
-            ImageNavigatorFragment(
+            newInstance(
                 publication = dummyPublication,
                 initialLocator = Locator(href = Url("#")!!, mediaType = MediaType.JPEG),
                 listener = null

@@ -238,8 +238,8 @@ public class ExoPlayerEngine private constructor(
     override val playback: StateFlow<AudioEngine.Playback>
         get() = _playback.asStateFlow()
 
-    override val settings: StateFlow<ExoPlayerSettings>
-        get() = _settings.asStateFlow()
+    override fun getSettings(): StateFlow<ExoPlayerSettings> =
+        _settings.asStateFlow()
 
     override fun play() {
         exoPlayer.play()

@@ -169,8 +169,8 @@ public class TtsNavigator<
         return go(locator, animated)
     }
 
-    override val settings: StateFlow<S> =
-        player.settings
+    override fun getSettings(): StateFlow<S> =
+        player.getSettings()
 
     override fun submitPreferences(preferences: P) {
         player.submitPreferences(preferences)

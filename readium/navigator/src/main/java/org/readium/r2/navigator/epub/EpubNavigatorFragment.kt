@@ -10,6 +10,7 @@ package org.readium.r2.navigator.epub
 
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import android.os.Bundle
 import android.util.LayoutDirection
 import android.view.ActionMode
@@ -28,6 +29,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentFactory
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withStarted
@@ -86,6 +88,8 @@ import org.readium.r2.shared.extensions.tryOrLog
 import org.readium.r2.shared.publication.Href
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.publication.Manifest
+import org.readium.r2.shared.publication.Metadata
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
@@ -109,35 +113,24 @@ public typealias JavascriptInterfaceFactory = (resource: Link) -> Any?
  * To use this [Fragment], create a factory with `EpubNavigatorFragment.createFactory()`.
  */
 @OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
-public class EpubNavigatorFragment internal constructor(
-    publication: Publication,
-    private val initialLocator: Locator?,
-    readingOrder: List<Link>?,
-    private val initialPreferences: EpubPreferences,
-    internal val listener: Listener?,
-    internal val paginationListener: PaginationListener?,
-    epubLayout: EpubLayout,
-    private val defaults: EpubDefaults,
-    configuration: Configuration,
-) : NavigatorFragment(publication),
+public class EpubNavigatorFragment : NavigatorFragment(),
     OverflowableNavigator,
     SelectableNavigator,
     DecorableNavigator,
     HyperlinkNavigator,
     Configurable<EpubSettings, EpubPreferences> {
 
+    private var initialLocator: Locator? = null
+    private var initialPreferences: EpubPreferences = EpubPreferences()
+    internal var listener: Listener? = null
+    internal var paginationListener: PaginationListener? = null
+    private var epubLayout: EpubLayout = EpubLayout.REFLOWABLE
+    private var defaults: EpubDefaults = EpubDefaults()
+
     private val scrollPositionsHashMap: HashMap<String, Locator?> = hashMapOf()
 
     // Make a copy to prevent the user from modifying the configuration after initialization.
-    internal val config: Configuration = configuration.copy().apply {
-        servedAssets += "readium/.*"
-
-        addFontFamilyDeclaration(FontFamily.OPEN_DYSLEXIC) {
-            addFontFace {
-                addSource("readium/fonts/OpenDyslexic-Regular.otf")
-            }
-        }
-    }
+    internal var config: Configuration = Configuration()
 
     public data class Configuration internal constructor(
 
@@ -283,7 +276,8 @@ public class EpubNavigatorFragment internal constructor(
 
     // Configurable
 
-    override val settings: StateFlow<EpubSettings> get() = viewModel.settings
+    override fun getSettings(): StateFlow<EpubSettings> =
+        viewModel.settings
 
     override fun submitPreferences(preferences: EpubPreferences) {
         viewModel.submitPreferences(preferences)
@@ -300,26 +294,11 @@ public class EpubNavigatorFragment internal constructor(
         return page.runJavaScriptSuspend(script)
     }
 
-    private val viewModel: EpubNavigatorViewModel by viewModels {
-        EpubNavigatorViewModel.createFactory(
-            requireActivity().application,
-            publication,
-            config = this.config,
-            initialPreferences = initialPreferences,
-            listener = listener,
-            layout = epubLayout,
-            defaults = defaults
-        )
-    }
+    private lateinit var viewModel: EpubNavigatorViewModel
 
-    private val readingOrder: List<Link> = readingOrder ?: publication.readingOrder
+    private var readingOrder: List<Link> = emptyList()
 
-    private val positionsByReadingOrder: List<List<Locator>> =
-        if (readingOrder != null) {
-            emptyList()
-        } else {
-            runBlocking { publication.positionsByReadingOrder() }
-        }
+    private var positionsByReadingOrder: List<List<Locator>> = emptyList()
 
     internal lateinit var positions: List<Locator>
 
@@ -334,6 +313,21 @@ public class EpubNavigatorFragment internal constructor(
 
     private var _binding: ReadiumNavigatorViewpagerBinding? = null
     private val binding get() = _binding!!
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val factory = EpubNavigatorViewModel.createFactory(
+            requireActivity().application,
+            publication,
+            config = config,
+            initialPreferences = initialPreferences,
+            listener = listener,
+            layout = epubLayout,
+            defaults = defaults,
+        )
+        viewModel = ViewModelProvider(this, factory)[EpubNavigatorViewModel::class.java]
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -495,8 +489,8 @@ public class EpubNavigatorFragment internal constructor(
         }
         adapter.listener = PagerAdapterListener()
         resourcePager.adapter = adapter
-        resourcePager.direction = overflow.value.readingProgression
-        resourcePager.layoutDirection = when (settings.value.readingProgression) {
+        resourcePager.direction = getOverflow().value.readingProgression
+        resourcePager.layoutDirection = when (getSettings().value.readingProgression) {
             ReadingProgression.RTL -> LayoutDirection.RTL
             ReadingProgression.LTR -> LayoutDirection.LTR
         }
@@ -586,7 +580,7 @@ public class EpubNavigatorFragment internal constructor(
         override fun onCreatePageFragment(fragment: Fragment) {
             if (viewModel.layout == EpubLayout.REFLOWABLE) {
                 if (!config.useReadiumCssFontSize) {
-                    (fragment as? R2EpubPageFragment)?.setFontSize(settings.value.fontSize)
+                    (fragment as? R2EpubPageFragment)?.setFontSize(getSettings().value.fontSize)
                 }
             }
         }
@@ -701,8 +695,8 @@ public class EpubNavigatorFragment internal constructor(
     override val publicationView: View
         get() = requireView()
 
-    override val overflow: StateFlow<OverflowableNavigator.Overflow>
-        get() = viewModel.overflow
+    override fun getOverflow(): StateFlow<OverflowableNavigator.Overflow> =
+        viewModel.overflow
 
     private val inputListener = CompositeInputListener()
 
@@ -776,9 +770,6 @@ public class EpubNavigatorFragment internal constructor(
     internal val webViewListener: R2BasicWebView.Listener = WebViewListener()
 
     private inner class WebViewListener : R2BasicWebView.Listener {
-
-        override val readingProgression: ReadingProgression
-            get() = viewModel.readingProgression
 
         override fun onResourceLoaded(webView: R2BasicWebView, link: Link) {
             run(viewModel.onResourceLoaded(webView, link))
@@ -881,6 +872,9 @@ public class EpubNavigatorFragment internal constructor(
         override fun resourceAtUrl(url: Url): Resource? =
             viewModel.internalLinkFromUrl(url)
                 ?.let { publication.get(it) }
+
+        override fun getReadingProgression(): ReadingProgression =
+            viewModel.readingProgression
     }
 
     override fun goForward(animated: Boolean): Boolean {
@@ -890,7 +884,7 @@ public class EpubNavigatorFragment internal constructor(
 
         val webView = currentReflowablePageFragment?.webView ?: return false
 
-        when (settings.value.readingProgression) {
+        when (getSettings().value.readingProgression) {
             ReadingProgression.LTR ->
                 webView.scrollRight(animated)
 
@@ -907,7 +901,7 @@ public class EpubNavigatorFragment internal constructor(
 
         val webView = currentReflowablePageFragment?.webView ?: return false
 
-        when (settings.value.readingProgression) {
+        when (getSettings().value.readingProgression) {
             ReadingProgression.LTR ->
                 webView.scrollLeft(animated)
 
@@ -932,7 +926,7 @@ public class EpubNavigatorFragment internal constructor(
         scrollPositionsHashMap[currentLocator.value.href.toString()] = currentLocator.value
 
         currentReflowablePageFragment?.webView?.let { webView ->
-            if (settings.value.readingProgression == ReadingProgression.RTL) {
+            if (getSettings().value.readingProgression == ReadingProgression.RTL) {
                 webView.setCurrentItem(webView.numPages - 1, false)
             } else {
                 webView.setCurrentItem(0, false)
@@ -956,7 +950,7 @@ public class EpubNavigatorFragment internal constructor(
         scrollPositionsHashMap[currentLocator.value.href.toString()] = currentLocator.value
 
         currentReflowablePageFragment?.webView?.let { webView ->
-            if (settings.value.readingProgression == ReadingProgression.RTL) {
+            if (getSettings().value.readingProgression == ReadingProgression.RTL) {
                 webView.setCurrentItem(0, false)
             } else {
                 webView.setCurrentItem(webView.numPages - 1, false)
@@ -1133,6 +1127,44 @@ public class EpubNavigatorFragment internal constructor(
 
     public companion object {
 
+        public fun newInstance(
+            publication: Publication,
+            initialLocator: Locator?,
+            readingOrder: List<Link>?,
+            initialPreferences: EpubPreferences,
+            listener: Listener?,
+            paginationListener: PaginationListener?,
+            epubLayout: EpubLayout,
+            defaults: EpubDefaults,
+            configuration: Configuration,
+        ): EpubNavigatorFragment = EpubNavigatorFragment().apply {
+            this.publication = publication
+            this.initialLocator = initialLocator
+            this.readingOrder = readingOrder ?: publication.readingOrder
+            this.positionsByReadingOrder = if (readingOrder != null) {
+                emptyList()
+            } else {
+                runBlocking { publication.positionsByReadingOrder() }
+            }
+
+            this.initialPreferences = initialPreferences
+            this.listener = listener
+            this.paginationListener = paginationListener
+            this.epubLayout = epubLayout
+            this.defaults = defaults
+
+            // Make a copy to prevent the user from modifying the configuration after initialization.
+            this.config = configuration.copy().apply {
+                servedAssets += "readium/.*"
+
+                addFontFamilyDeclaration(FontFamily.OPEN_DYSLEXIC) {
+                    addFontFace {
+                        addSource("readium/fonts/OpenDyslexic-Regular.otf")
+                    }
+                }
+            }
+        }
+
         /**
          * Creates a factory for a dummy [EpubNavigatorFragment].
          *
@@ -1140,7 +1172,7 @@ public class EpubNavigatorFragment internal constructor(
          * need to make sure the fragment is removed from the screen before [onResume] is called.
          */
         public fun createDummyFactory(): FragmentFactory = createFragmentFactory {
-            EpubNavigatorFragment(
+            newInstance(
                 publication = dummyPublication,
                 initialLocator = Locator(href = Url("#")!!, mediaType = MediaType.XHTML),
                 readingOrder = null,

@@ -36,7 +36,7 @@ public interface Configurable<S : Settings, P : Preferences<P>> {
     /**
      * Current [Settings] values.
      */
-    public val settings: StateFlow<S>
+    public fun getSettings(): StateFlow<S>
 
     /**
      * Submits a new set of [Preferences] to update the current [Settings].

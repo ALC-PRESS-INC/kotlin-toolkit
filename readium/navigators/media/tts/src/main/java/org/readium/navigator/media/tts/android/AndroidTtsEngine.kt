@@ -270,7 +270,7 @@ public class AndroidTtsEngine private constructor(
     private var isClosed: Boolean =
         false
 
-    override val settings: StateFlow<AndroidTtsSettings> =
+    override fun getSettings(): StateFlow<AndroidTtsSettings> =
         _settings.asStateFlow()
 
     override fun submitPreferences(preferences: AndroidTtsPreferences) {
@@ -354,7 +354,7 @@ public class AndroidTtsEngine private constructor(
         engine: TextToSpeech,
         request: Request,
     ): Boolean {
-        return engine.setupVoice(settings.value, request.id, request.language, voices) &&
+        return engine.setupVoice(getSettings().value, request.id, request.language, voices) &&
             (engine.speak(request.text, QUEUE_ADD, null, request.id.value) == SUCCESS)
     }
 

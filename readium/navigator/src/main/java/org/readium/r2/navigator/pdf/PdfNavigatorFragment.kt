@@ -18,6 +18,7 @@ import androidx.fragment.app.FragmentFactory
 import androidx.fragment.app.commitNow
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ import org.readium.r2.navigator.R
 import org.readium.r2.navigator.RestorationNotSupportedException
 import org.readium.r2.navigator.VisualNavigator
 import org.readium.r2.navigator.dummyPublication
+import org.readium.r2.navigator.epub.EpubNavigatorViewModel
 import org.readium.r2.navigator.extensions.normalizeLocator
 import org.readium.r2.navigator.extensions.page
 import org.readium.r2.navigator.input.CompositeInputListener
@@ -59,17 +61,31 @@ import org.readium.r2.shared.util.mediatype.MediaType
  */
 @ExperimentalReadiumApi
 @OptIn(DelicateReadiumApi::class)
-public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Preferences<P>> internal constructor(
-    publication: Publication,
-    private val initialLocator: Locator? = null,
-    private val initialPreferences: P,
-    private val listener: Listener?,
-    private val pdfEngineProvider: PdfEngineProvider<S, P, *>,
-) : NavigatorFragment(publication), VisualNavigator, OverflowableNavigator, Configurable<S, P> {
+public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Preferences<P>>
+    : NavigatorFragment(), VisualNavigator, OverflowableNavigator, Configurable<S, P> {
+
+    private var initialLocator: Locator? = null
+    private lateinit var initialPreferences: P
+    private var listener: Listener? = null
+    private lateinit var pdfEngineProvider: PdfEngineProvider<S, P, *>
 
     public interface Listener : VisualNavigator.Listener
 
     public companion object {
+
+        public fun <S : Configurable.Settings, P : Configurable.Preferences<P>> newInstance(
+            publication: Publication,
+            initialLocator: Locator? = null,
+            initialPreferences: P,
+            listener: Listener?,
+            pdfEngineProvider: PdfEngineProvider<S, P, *>,
+        ): PdfNavigatorFragment<S, P> = PdfNavigatorFragment<S, P>().apply {
+            this.publication = publication
+            this.initialLocator = initialLocator
+            this.initialPreferences = initialPreferences
+            this.listener = listener
+            this.pdfEngineProvider = pdfEngineProvider
+        }
 
         /**
          * Creates a factory for [PdfNavigatorFragment].
@@ -89,7 +105,7 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
             listener: Listener? = null,
             pdfEngineProvider: PdfEngineProvider<*, P, *>,
         ): FragmentFactory = createFragmentFactory {
-            PdfNavigatorFragment(
+            newInstance(
                 publication,
                 initialLocator,
                 preferences ?: pdfEngineProvider.createEmptyPreferences(),
@@ -107,7 +123,7 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
         public fun <P : Configurable.Preferences<P>> createDummyFactory(
             pdfEngineProvider: PdfEngineProvider<*, P, *>,
         ): FragmentFactory = createFragmentFactory {
-            PdfNavigatorFragment(
+            newInstance(
                 publication = dummyPublication,
                 initialLocator = Locator(href = Url("#")!!, mediaType = MediaType.PDF),
                 initialPreferences = pdfEngineProvider.createEmptyPreferences(),
@@ -130,15 +146,7 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
 
     private val inputListener = CompositeInputListener()
 
-    private val viewModel: PdfNavigatorViewModel<S, P> by viewModels {
-        PdfNavigatorViewModel.createFactory(
-            requireActivity().application,
-            publication,
-            initialLocator?.locations,
-            initialPreferences,
-            pdfEngineProvider
-        )
-    }
+    private lateinit var viewModel: PdfNavigatorViewModel<S, P>
 
     private lateinit var documentFragment: PdfDocumentFragment<S>
 
@@ -157,8 +165,19 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        childFragmentManager.fragmentFactory = documentFragmentFactory
         super.onCreate(savedInstanceState)
+
+        val factory = PdfNavigatorViewModel.createFactory(
+            requireActivity().application,
+            publication,
+            initialLocator?.locations,
+            initialPreferences,
+            pdfEngineProvider
+        )
+        @Suppress("UNCHECKED_CAST")
+        viewModel = ViewModelProvider(this, factory)[PdfNavigatorViewModel::class.java] as PdfNavigatorViewModel<S, P>
+
+        childFragmentManager.fragmentFactory = documentFragmentFactory
     }
 
     override fun onCreateView(
@@ -211,7 +230,7 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
 
     // Configurable
 
-    override val settings: StateFlow<S> get() = viewModel.settings
+    override fun getSettings(): StateFlow<S> = viewModel.settings
 
     override fun submitPreferences(preferences: P) {
         viewModel.submitPreferences(preferences)
@@ -253,8 +272,8 @@ public class PdfNavigatorFragment<S : Configurable.Settings, P : Configurable.Pr
         get() = requireView()
 
     @ExperimentalReadiumApi
-    override val overflow: StateFlow<OverflowableNavigator.Overflow>
-        get() = settings.mapStateIn(lifecycleScope) { settings ->
+    override fun getOverflow(): StateFlow<OverflowableNavigator.Overflow> =
+        getSettings().mapStateIn(lifecycleScope) { settings ->
             pdfEngineProvider.computeOverflow(settings)
         }
 

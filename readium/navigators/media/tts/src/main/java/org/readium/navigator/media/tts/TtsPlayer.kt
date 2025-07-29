@@ -184,8 +184,8 @@ internal class TtsPlayer<
     private val utteranceMutable: MutableStateFlow<Utterance> =
         MutableStateFlow(initialWindow.currentUtterance.ttsPlayerUtterance())
 
-    override val settings: StateFlow<S> =
-        engineFacade.settings
+    override fun getSettings(): StateFlow<S> =
+        engineFacade.getSettings()
 
     val voices: Set<V> =
         engineFacade.voices
@@ -584,8 +584,8 @@ internal class TtsPlayer<
     private fun submitPreferencesForSure(preferences: P) {
         lastPreferences = preferences
         engineFacade.submitPreferences(preferences)
-        contentIterator.language = engineFacade.settings.value.language
-        contentIterator.overrideContentLanguage = engineFacade.settings.value.overrideContentLanguage
+        contentIterator.language = engineFacade.getSettings().value.language
+        contentIterator.overrideContentLanguage = engineFacade.getSettings().value.overrideContentLanguage
     }
 
     private fun TtsUtteranceIterator.Utterance.ttsPlayerUtterance(): Utterance =

@@ -54,8 +54,6 @@ import timber.log.Timber
 internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(context, attrs) {
 
     interface Listener {
-        val readingProgression: ReadingProgression
-
         /** Called when the resource content is loaded in the web view. */
         fun onResourceLoaded(webView: R2BasicWebView, link: Link) {}
 
@@ -104,6 +102,8 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
         @InternalReadiumApi
         fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean = false
+
+        fun getReadingProgression(): ReadingProgression
     }
 
     var listener: Listener? = null
@@ -142,7 +142,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
             val pageWidth = computeHorizontalScrollExtent()
             val contentWidth = computeHorizontalScrollRange()
 
-            val isRtl = (listener?.readingProgression == ReadingProgression.RTL)
+            val isRtl = (listener?.getReadingProgression() == ReadingProgression.RTL)
 
             // For RTL, we need to add the equivalent of one page to the x position, otherwise the
             // progression will be one page off.
@@ -203,7 +203,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
             val listener = listener ?: return@launch
 
             fun goRight(jump: Boolean) {
-                if (listener.readingProgression == ReadingProgression.RTL) {
+                if (listener.getReadingProgression() == ReadingProgression.RTL) {
                     listener.goBackward(animated = animated) // Legacy
                     listener.goToPreviousResource(jump = jump, animated = animated)
                 } else {
@@ -234,7 +234,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
             val listener = listener ?: return@launch
 
             fun goLeft(jump: Boolean) {
-                if (listener.readingProgression == ReadingProgression.RTL) {
+                if (listener.getReadingProgression() == ReadingProgression.RTL) {
                     listener.goForward(animated = animated) // legacy
                     listener.goToNextResource(jump = jump, animated = animated)
                 } else {
