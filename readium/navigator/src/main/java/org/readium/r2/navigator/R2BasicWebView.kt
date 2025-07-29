@@ -488,8 +488,10 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         runJavaScriptSuspend("readium.scrollToId(\"$htmlId\");").toBoolean()
 
     fun scrollToPosition(progression: Double, callback: () -> Unit = {}) {
-        runJavaScript("readium.scrollToPosition(\"$progression\");") {
-            callback.invoke()
+        if (progression > 0.0 && progression < 1.0) {
+            runJavaScript("readium.scrollToPosition(\"$progression\");") {
+                callback.invoke()
+            }
         }
     }
 
