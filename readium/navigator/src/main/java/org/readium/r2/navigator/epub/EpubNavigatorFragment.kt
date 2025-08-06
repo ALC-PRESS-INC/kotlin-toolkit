@@ -420,7 +420,7 @@ public class EpubNavigatorFragment internal constructor(
                             locatorToResourceAtIndex(resourcePager.currentItem)?.href.toString()
                         val locator = scrollPositionsHashMap[key]
                         lifecycleScope.launch {
-                            locator?.locations?.progression?.takeIf { it > 0.0 }?.let { progression ->
+                            locator?.locations?.progression?.takeIf { it > 0.0 && it < 1.0 }?.let { progression ->
                                 webView.scrollToPosition(progression) {
                                     paginationListener?.onScrollToPosition(_currentLocator.value)
                                 }
