@@ -1098,9 +1098,7 @@ public class EpubNavigatorFragment internal constructor(
                 )
 
                 is PageResource.EpubReflowable -> pageResource.link
-                else -> throw IllegalStateException(
-                    "Expected EpubFxl or EpubReflowable page resources"
-                )
+                else -> return@launch
             }
             val positionLocator = publication.positionsByResource[link.url()]?.let { positions ->
                 val index = ceil(progression * (positions.size - 1)).toInt()
